@@ -167,6 +167,30 @@ def upgrade_pre_commit(c):
     install_git_hooks(c)
 
 
+@task
+def install(c):
+    """Install systemd and cron files and restart services."""
+    _validate_venv(c)
+    c.run(
+        "sudo cp /home/ubuntu/home-energy/system/home-energy-dte-daily "
+        + "/etc/cron.d/",
+        echo=True,
+    )
+    c.run(
+        "sudo cp /home/ubuntu/home-energy/system/energy_bridge-collectd.service "
+        + "/etc/systemd/system/",
+        echo=True,
+    )
+    c.run(
+        "sudo systemctl daemon-reload",
+        echo=True,
+    )
+    c.run(
+        "sudo systemctl restart energy_bridge-collectd.service",
+        echo=True,
+    )
+
+
 ns = Collection()
 bootstrap = Collection("bootstrap")
 bootstrap.add_task(bootstrap_default, name="_default_", default=True)
@@ -178,3 +202,4 @@ dev = Collection("dev")
 dev.add_task(pip_compile)
 dev.add_task(upgrade_pre_commit)
 ns.add_collection(dev)
+ns.add_task(install)
