@@ -4,7 +4,7 @@ import datetime
 import os
 
 import dotenv
-import pandas as pd
+import pytz
 import requests
 from influxdb import InfluxDBClient
 
@@ -31,10 +31,11 @@ def main():
         "username": os.getenv("DTE_USERNAME"),
         "password": os.getenv("DTE_PASSWORD"),
     }
-    timezone = os.getenv("DTE_TIMEZONE")
-    assert timezone is not None
+    timezone = pytz.timezone(os.getenv("DTE_TIMEZONE"))
 
-    end_date = pd.Timestamp.utcnow().tz_convert(timezone).date()
+    # get the current local date
+    end_date = datetime.datetime.now(datetime.timezone.utc).astimezone(timezone).date()
+    # look back 30 days
     start_date = end_date - datetime.timedelta(days=30)
 
     with requests.Session() as s:
@@ -74,20 +75,22 @@ def main():
 
     points = []
     for day_data in data["usage"]:
-        day_start_utc = pd.Timestamp.fromtimestamp(day_data["DAY_START_EPOCH"], "UTC")
-        day_start_local = day_start_utc.tz_convert(timezone)
-        date_local = day_start_local.date()
+        day_start_utc = datetime.datetime.fromtimestamp(
+            day_data["DAY_START_EPOCH"],
+            datetime.timezone.utc,
+        )
+        date_local = day_start_utc.astimezone(timezone).date()
         # determine the list of utc timepoints for the local date (DST-safe)
         datetimes_utc = [day_start_utc]
-        while (dt := datetimes_utc[-1] + pd.Timedelta(hours=1)).tz_convert(
+        while (dt := datetimes_utc[-1] + datetime.timedelta(hours=1)).astimezone(
             timezone
         ).date() == date_local:
             datetimes_utc.append(dt)
 
-        # for the extra fall-behind hour, we just copy the same
-        # hour since this API does not provide a value for both
+        # for the extra fall-behind hour, we just copy the same hour's
+        # data since this API does not provide a value for both
         for dt_utc in datetimes_utc:
-            dt_local = dt_utc.tz_convert(timezone)
+            dt_local = dt_utc.astimezone(timezone)
             key = "HR" + str(dt_local.hour + 1).zfill(2) + "_KWH"
             # save as Wh to match our energy-bridge readings
             value = day_data[key] * 1000.0

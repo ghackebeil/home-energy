@@ -1,4 +1,4 @@
 influxdb
 paho-mqtt
-pandas
 python-dotenv
+pytz
