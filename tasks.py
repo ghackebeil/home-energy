@@ -114,47 +114,6 @@ def bootstrap_default(c, python=default_venv_python, yes=False):
     print(f"    source {venv_bin}/activate\n\n")
 
 
-@task(
-    help={
-        "upgrade": "optional package to upgrade (e.g., 'django<1.0')",
-    },
-)
-def pip_compile(c, upgrade=None):
-    """Run the pip-compile process on all projects."""
-    _validate_venv(c)
-    # check this so we know if we need to update the fully-qualified invoke command we
-    # put at the top of the requirements file
-    assert dev.tasks["pip-compile"] is pip_compile
-    task_name = "dev.pip-compile"
-    # try to make sure to process these in order
-    priority = {
-        "requirements.in": float("-inf"),
-        "requirements-test.in": float("inf"),
-    }
-    for req in sorted(
-        glob.glob(os.path.join(this_dir, "requirements*.in")),
-        key=lambda _: (priority.get(os.path.basename(_), 0), _),
-    ):
-        req_dirname = os.path.dirname(req)
-        req_filename = os.path.basename(req)
-        args = ""
-        args += f" --output-file={req_filename.replace('.in', '.txt')}"
-        args += f" {req_filename}"
-        # this will add a message to the requirements files about
-        # how they were generated
-        msg = f"pip-compile {args}\n#\n"
-        msg += "# or run the following command from the project directory:\n#\n"
-        msg += f"#    invoke {task_name}"
-        cmd = (
-            f"CUSTOM_COMPILE_COMMAND='{msg}' {venv_python} "
-            + f"-m piptools compile {args}"
-        )
-        if upgrade is not None:
-            cmd += f" --upgrade-package '{upgrade}'"
-        with c.cd(req_dirname):
-            c.run(cmd, echo=True, hide="both")
-
-
 @task
 def upgrade_pre_commit(c):
     """Upgrade and reinstall the git pre-commit checks for every project."""
@@ -207,7 +166,6 @@ bootstrap.add_task(install_git_hooks)
 bootstrap.add_task(install_project)
 ns.add_collection(bootstrap)
 dev = Collection("dev")
-dev.add_task(pip_compile)
 dev.add_task(upgrade_pre_commit)
 ns.add_collection(dev)
 ns.add_task(install)
