@@ -1,5 +1,4 @@
+influxdb
 paho-mqtt
 pandas
-pydantic
 python-dotenv
-influxdb
