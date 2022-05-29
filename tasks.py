@@ -116,7 +116,7 @@ def bootstrap_default(c, python=default_venv_python, yes=False):
 
 @task
 def upgrade_pre_commit(c):
-    """Upgrade and reinstall the git pre-commit checks for every project."""
+    """Upgrade and reinstall the git pre-commit hooks."""
     _validate_venv(c)
     rc = c.run(f"{venv_python} -m pip install -U pre-commit", echo=True)
     assert rc.ok
