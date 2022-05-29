@@ -1,3 +1,5 @@
+# Listens to DTE energy-bridge mqtt topics and saves to influxdb.
+
 import datetime
 import json
 import os

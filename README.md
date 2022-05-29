@@ -1,2 +1,5 @@
 # home-energy
-Home energy usage collection through the DTE Energy Bridge
+
+A personal project for monitoring home energy usage. Persists live
+energy readings coming from mqtt topics reported by the DTE Energy
+Bridge alongside historical usage data collected from DTE usage API.

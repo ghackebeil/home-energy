@@ -1,4 +1,4 @@
-# Queries DTE historical usage API for hourly data.
+# Queries DTE usage API for hourly data and saves to influxdb.
 
 import datetime
 import os
