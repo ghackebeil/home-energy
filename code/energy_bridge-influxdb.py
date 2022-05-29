@@ -9,7 +9,7 @@ from influxdb import InfluxDBClient
 TOPIC_MAP = {
     "event/metering/instantaneous_demand": lambda *, time, demand: {
         "time": datetime.datetime.fromtimestamp(
-            time / 1000, datetime.timezone.utc
+            time // 1000, datetime.timezone.utc
         ).isoformat(),
         "tags": {},
         "fields": {
@@ -18,7 +18,7 @@ TOPIC_MAP = {
     },
     "event/metering/summation/minute": lambda *, type, time, local_time, value: {
         "time": datetime.datetime.fromtimestamp(
-            time / 1000, datetime.timezone.utc
+            time // 1000, datetime.timezone.utc
         ).isoformat(),
         "tags": {},
         "fields": {
