@@ -178,7 +178,7 @@ def install(c, yes=False):
     system_files_dir = os.path.join(this_dir, "system")
     for basename, dst_dir in [
         ("home-energy-dte-daily", "/etc/cron.d"),
-        ("energy_bridge-collectd.service", "/etc/systemd/system"),
+        ("energy_bridge-influxdb.service", "/etc/systemd/system"),
     ]:
         src = os.path.join(system_files_dir, basename)
         dst = os.path.join(dst_dir, basename)
@@ -194,7 +194,7 @@ def install(c, yes=False):
         echo=True,
     )
     c.run(
-        "sudo systemctl restart energy_bridge-collectd.service",
+        "sudo systemctl restart energy_bridge-influxdb.service",
         echo=True,
     )
 
