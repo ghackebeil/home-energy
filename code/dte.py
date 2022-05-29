@@ -107,6 +107,7 @@ def main():
             dt_local = dt_utc.tz_convert(timezone)
             key = "HR" + str(dt_local.hour + 1).zfill(2) + "_KWH"
             if key in day_data:
+                # save as Watts
                 points.append(
                     HourlyUsage(time=dt_utc.timestamp(), value=day_data[key] * 1000)
                 )

@@ -1,67 +1,41 @@
 import datetime
 import json
 import os
-import typing
 
 import dotenv
 import paho.mqtt.client as mqtt
-import pydantic
 from influxdb import InfluxDBClient
 
-
-class _Config:
-    validate_all = True
-    validate_assignment = True
-    extra = "forbid"
-
-
-@pydantic.dataclasses.dataclass(frozen=True, config=_Config)
-class InstantaneousDemand:
-    time: datetime.datetime
-    demand: pydantic.conint(strict=True, ge=0)
-
-    def as_point(self):
-        return {
-            "measurement": "event/metering/instantaneous_demand",
-            "time": self.time.isoformat(),
-            "tags": {},
-            "fields": {
-                "value": self.demand,
-            },
-        }
-
-
-@pydantic.dataclasses.dataclass(frozen=True, config=_Config)
-class MinutelyDemand:
-    type: typing.Literal["minute"]
-    time: datetime.datetime
-    local_time: datetime.datetime
-    value: pydantic.confloat(strict=True, ge=0)
-
-    def as_point(self):
-        return {
-            "measurement": "event/metering/summation/minute",
-            "time": self.time.isoformat(),
-            "tags": {},
-            "fields": {
-                "value": self.value,
-            },
-        }
-
-
 TOPIC_MAP = {
-    "event/metering/instantaneous_demand": InstantaneousDemand,
-    "event/metering/summation/minute": MinutelyDemand,
+    "event/metering/instantaneous_demand": lambda *, time, demand: {
+        "time": datetime.datetime.fromtimestamp(
+            time / 1000, datetime.timezone.utc
+        ).isoformat(),
+        "tags": {},
+        "fields": {
+            "value": int(demand),
+        },
+    },
+    "event/metering/summation/minute": lambda *, type, time, local_time, value: {
+        "time": datetime.datetime.fromtimestamp(
+            time / 1000, datetime.timezone.utc
+        ).isoformat(),
+        "tags": {},
+        "fields": {
+            "value": float(value),
+        },
+    },
 }
 
 
 def on_message(influxdb_client):
     def process(mqtt_client, userdata, message):
-        type_ = TOPIC_MAP.get(message.topic, None)
-        if type_ is None:
+        as_point = TOPIC_MAP.get(message.topic, None)
+        if as_point is None:
             return
-        data = type_(**json.loads(message.payload))
-        influxdb_client.write_points([data.as_point()])
+        point = as_point(**json.loads(message.payload))
+        point["measurement"] = message.topic
+        influxdb_client.write_points([point])
 
     return process
 
