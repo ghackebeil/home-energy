@@ -1,2 +1,1 @@
-# 10 am UTC
-0 10 * * * ubuntu /home/ubuntu/home-energy/venv/bin/python /home/ubuntu/home-energy/code/dte.py
+0 12 * * * ubuntu /home/ubuntu/home-energy/venv/bin/python /home/ubuntu/home-energy/code/dte.py

@@ -22,7 +22,7 @@ venv_bin = os.path.join(venv_dir, "bin")
 venv_python = os.path.join(venv_bin, "python")
 
 
-def _ask_y_or_n():
+def _ask_overwrite_y_or_n():
     """Return True for 'yes' and False for 'no'"""
     result = input("Overwrite? [y/n]: ").casefold()
     while result not in ("y", "n"):
@@ -53,7 +53,7 @@ def create_venv(c, python=default_venv_python, yes=False):
     if os.path.exists(venv_dir):
         print(f"venv directory exists: '{venv_dir}'")
         if not yes:
-            if not _ask_y_or_n():
+            if not _ask_overwrite_y_or_n():
                 exit()
         print(f"deleting directory '{venv_dir}'")
         shutil.rmtree(venv_dir)
@@ -167,20 +167,28 @@ def upgrade_pre_commit(c):
     install_git_hooks(c)
 
 
-@task
-def install(c):
+@task(
+    help={
+        "yes": "answer yes to any intermediate steps",
+    },
+)
+def install(c, yes=False):
     """Install systemd and cron files and restart services."""
     _validate_venv(c)
-    c.run(
-        "sudo cp /home/ubuntu/home-energy/system/home-energy-dte-daily "
-        + "/etc/cron.d/",
-        echo=True,
-    )
-    c.run(
-        "sudo cp /home/ubuntu/home-energy/system/energy_bridge-collectd.service "
-        + "/etc/systemd/system/",
-        echo=True,
-    )
+    system_files_dir = os.path.join(this_dir, "system")
+    for basename, dst_dir in [
+        ("home-energy-dte-daily", "/etc/cron.d"),
+        ("energy_bridge-collectd.service", "/etc/systemd/system"),
+    ]:
+        src = os.path.join(system_files_dir, basename)
+        dst = os.path.join(dst_dir, basename)
+        if os.path.exists(dst):
+            print(f"destination exists: '{dst}'")
+            if not yes:
+                if not _ask_overwrite_y_or_n():
+                    exit()
+        c.run(f"sudo cp {src} {dst}", echo=True)
+    # restart service
     c.run(
         "sudo systemctl daemon-reload",
         echo=True,
