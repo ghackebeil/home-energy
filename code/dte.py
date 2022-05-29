@@ -1,3 +1,5 @@
+# Queries DTE historical usage API for hourly data.
+
 import datetime
 import os
 
@@ -6,6 +8,7 @@ import pandas as pd
 import requests
 from influxdb import InfluxDBClient
 
+# destination measurment for influxdb
 MEASUREMENT = "dte/usage/report/electric"
 
 
@@ -60,7 +63,6 @@ def main():
             params={
                 "startDate": start_date,
                 "endDate": end_date,
-                "byMeter": False,
             },
             headers={
                 "Ocp-Apim-Subscription-Key": subscription_key,
