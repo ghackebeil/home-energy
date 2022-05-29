@@ -1,16 +1,16 @@
 [Unit]
-Description=energy bridge mqtt influxdb collection service
+Description=energy bridge mqtt-to-influxdb collection service
 Wants=influxdb.service
 After=influxdb.service
 StartLimitIntervalSec=0
 
 [Service]
 Type=simple
-SyslogIdentifier=energy_bridge-collectd
+SyslogIdentifier=energy_bridge-influxdb
 Restart=always
 RestartSec=10
 User=ubuntu
-ExecStart=/home/ubuntu/home-energy/venv/bin/python /home/ubuntu/home-energy/code/collect.py
+ExecStart=/home/ubuntu/home-energy/venv/bin/python /home/ubuntu/home-energy/code/energy_bridge-influxdb.py
 
 [Install]
 WantedBy=multi-user.target
