@@ -3,31 +3,10 @@ import os
 
 import dotenv
 import pandas as pd
-import pydantic
 import requests
 from influxdb import InfluxDBClient
 
-
-class _Config:
-    validate_all = True
-    validate_assignment = True
-    extra = "forbid"
-
-
-@pydantic.dataclasses.dataclass(frozen=True, config=_Config)
-class HourlyUsage:
-    time: datetime.datetime
-    value: pydantic.confloat(ge=0)
-
-    def as_point(self):
-        return {
-            "measurement": "dte/usage/report/electric",
-            "time": self.time.isoformat(),
-            "tags": {},
-            "fields": {
-                "value": self.value,
-            },
-        }
+MEASUREMENT = "dte/usage/report/electric"
 
 
 def main():
@@ -106,16 +85,19 @@ def main():
         for dt_utc in datetimes_utc:
             dt_local = dt_utc.tz_convert(timezone)
             key = "HR" + str(dt_local.hour + 1).zfill(2) + "_KWH"
+            # save as Wh to match our energy-bridge readings
+            value = day_data[key] * 1000.0
             if key in day_data:
-                # save as Watts
                 points.append(
-                    HourlyUsage(time=dt_utc.timestamp(), value=day_data[key] * 1000)
+                    {
+                        "measurement": MEASUREMENT,
+                        "time": dt_utc.isoformat(),
+                        "tags": {},
+                        "fields": {"value": value},
+                    },
                 )
 
-    points = sorted(points, key=lambda _: _.time.timestamp())
-    influxdb_client.write_points(
-        list(map(lambda _: _.as_point(), points)),
-    )
+    influxdb_client.write_points(points)
 
 
 if __name__ == "__main__":
