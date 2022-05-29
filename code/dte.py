@@ -76,14 +76,16 @@ def main():
     for day_data in data["usage"]:
         day_start_utc = pd.Timestamp.fromtimestamp(day_data["DAY_START_EPOCH"], "UTC")
         day_start_local = day_start_utc.tz_convert(timezone)
-        date_local = day_data["DAY_START"]
         date_local = day_start_local.date()
+        # determine the list of utc timepoints for the local date (DST-safe)
         datetimes_utc = [day_start_utc]
         while (dt := datetimes_utc[-1] + pd.Timedelta(hours=1)).tz_convert(
             timezone
         ).date() == date_local:
             datetimes_utc.append(dt)
 
+        # for the extra fall-behind hour, we just copy the same
+        # hour since this API does not provide a value for both
         for dt_utc in datetimes_utc:
             dt_local = dt_utc.tz_convert(timezone)
             key = "HR" + str(dt_local.hour + 1).zfill(2) + "_KWH"
