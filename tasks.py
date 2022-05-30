@@ -1,11 +1,3 @@
-# Functions decorated with @task can be run as shell commands using
-# the `invoke` command. See Invoke documentation for more information:
-#     https://docs.pyinvoke.org/en/stable/index.html
-# When adding commands, be cognizant that the invoke command along
-# with this file may be executed within older system python versions.
-
-
-import glob
 import os
 import shutil
 
@@ -88,12 +80,11 @@ def install_git_hooks(c):
 
 
 @task
-def install_project(c):
-    """Install project into the virtual environment."""
+def install_requirements(c):
+    """Install project requirements into the virtual environment."""
     _validate_venv(c)
-    for req in glob.glob(os.path.join(this_dir, "requirements*.txt")):
-        rc = c.run(f"{venv_python} -m pip install -r {req}", echo=True)
-        assert rc.ok
+    rc = c.run(f"{venv_python} -m pip install -r requirements.txt", echo=True)
+    assert rc.ok
 
 
 @task(
@@ -109,7 +100,7 @@ def bootstrap_default(c, python=default_venv_python, yes=False):
     """Bootstrap the development environment (runs all sub-commands)."""
     create_venv(c, python=python, yes=yes)
     install_git_hooks(c)
-    install_project(c)
+    install_requirements(c)
     print("\n\nBootstrap complete. Activate your virtual environment with:")
     print(f"    source {venv_bin}/activate\n\n")
 
@@ -163,7 +154,7 @@ bootstrap = Collection("bootstrap")
 bootstrap.add_task(bootstrap_default, name="_default_", default=True)
 bootstrap.add_task(create_venv)
 bootstrap.add_task(install_git_hooks)
-bootstrap.add_task(install_project)
+bootstrap.add_task(install_requirements)
 ns.add_collection(bootstrap)
 dev = Collection("dev")
 dev.add_task(upgrade_pre_commit)
